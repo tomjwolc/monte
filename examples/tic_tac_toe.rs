@@ -92,8 +92,7 @@ impl std::fmt::Display for TTT {
     }
 }
 
-#[test]
-fn play_tic_tac_toe() {
+fn main() {
     let ttt = TTT::new();
 
     let mcts = MCTS::new(&ttt, ExploitVsExplore::UCB1(1.41));
