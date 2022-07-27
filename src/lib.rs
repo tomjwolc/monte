@@ -28,18 +28,45 @@ pub trait Game<Choice> where Choice: Clone {
     }
 }
 
+pub enum ExploitVsExplore {
+    UCB1(f64),
+    Random,
+    ExploreFirst
+}
+
+impl ExploitVsExplore {
+    fn get_func(&self) -> Box<dyn Fn(f64, f64, f64) -> f64> {
+        match self {
+            Self::UCB1(exploration_constant) => {
+                let c = *exploration_constant;
+
+                Box::new(move |wins, visits, parent_visits| {
+                    wins / visits + c * (parent_visits.ln() / visits)
+                })
+            },
+            Self::Random => Box::new(move |_, _, _| {
+                let mut rng = rand::thread_rng();
+
+                rng.gen::<f64>()
+            }),
+            Self::ExploreFirst => Box::new(move |_, visits, _| 1.0 / visits)
+        }
+    }
+}
+
 #[allow(dead_code)]
 pub struct MCTS<Game_, Choice> where Choice: Clone, Game_: Game<Choice> + Clone {
     players: usize,
+    exploit_vs_explore: ExploitVsExplore,
     __anoying: (PhantomData<Choice>, PhantomData<Game_>)
 }
 
 #[allow(dead_code)]
 impl<Game_, Choice> MCTS<Game_, Choice> where Choice: Clone, Game_: Game<Choice> + Clone {
-    pub fn new(initial_game_state: &Game_) -> Self {
+    pub fn new(initial_game_state: &Game_, exploit_vs_explore: ExploitVsExplore) -> Self {
         let players = initial_game_state.get_num_players();
 
-        Self { players, __anoying: (PhantomData, PhantomData) }
+        Self { players, exploit_vs_explore, __anoying: (PhantomData, PhantomData) }
     }
     
     // returns the winner
@@ -67,7 +94,7 @@ impl<Game_, Choice> MCTS<Game_, Choice> where Choice: Clone, Game_: Game<Choice>
 
         let next= node.best_next_index(
             node.game_state.get_turn(), 
-            |wins, visits, parent_visits| UCB1(wins, visits, parent_visits)
+            self.exploit_vs_explore.get_func()
         ).expect("Tried to branch on dead end node");
 
         let winner = self.mcts(&mut node.next[next]);
@@ -88,7 +115,7 @@ impl<Game_, Choice> MCTS<Game_, Choice> where Choice: Clone, Game_: Game<Choice>
 
         let choice = match tree.best_next_index(
             tree.game_state.get_turn(), 
-            |wins, visits, _| wins / visits
+            Box::new(|wins, visits, _| wins / visits)
         ) {
             None => None,
             Some(index) => {
@@ -121,13 +148,13 @@ impl<Game_, Choice> Node<Game_, Choice> where Game_: Game<Choice> + Clone, Choic
         Node { winner: None, game_state, choice: None, wins: vec![0.0; players], visits: 0.0, next: Vec::new() }
     }
 
-    fn best_next_index(&self, player_id: usize, evaluator: fn(f64, f64, f64)-> f64) -> Option<usize> {
+    fn best_next_index(&self, player_id: usize, evaluator: Box<dyn Fn(f64, f64, f64)-> f64>) -> Option<usize> {
         if self.next.len() == 0 { return None };
 
         let mut best = (Vec::new(), -1.0);
 
         for i in 0..self.next.len() {
-            let score = evaluator(self.next[i].wins[player_id - 1], self.next[i].visits, self.visits);
+            let score = evaluator(self.next[i].wins[player_id - 1], self.next[i].visits + 0.00001, self.visits);
 
             if score > best.1 {
                 best = (vec![i], score);
@@ -178,9 +205,4 @@ impl<Game_, Choice> std::fmt::Display for Node<Game_, Choice> where Game_: Game<
 
         write!(f, "{{\"choice\": \"{:?}\", \"wins\": {:?}, \"visits\": {}, \"next\": {}}}", self.choice, self.wins, self.visits, str)
     }
-}
-
-#[allow(non_snake_case)]
-fn UCB1(wins: f64, visits: f64, parent_visits: f64) -> f64 {
-    wins / (visits + 0.01) + (2.0 * parent_visits.ln() / (visits + 0.01)).sqrt()
 }

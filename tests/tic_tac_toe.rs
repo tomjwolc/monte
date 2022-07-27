@@ -96,7 +96,7 @@ impl std::fmt::Display for TTT {
 fn play_tic_tac_toe() {
     let ttt = TTT::new();
 
-    let mcts = MCTS::new(&ttt);
+    let mcts = MCTS::new(&ttt, ExploitVsExplore::UCB1(1.41));
 
     for i in 0..1 {
         println!("Tree-less game #{}", i + 1);
