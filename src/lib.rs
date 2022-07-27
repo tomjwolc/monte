@@ -169,13 +169,15 @@ impl<Game_, Choice> Node<Game_, Choice> where Game_: Game<Choice> + Clone, Choic
     }
 
     fn update(&mut self, winner: usize, players: usize) -> usize {
+        let bonus = if let Some(_) = self.winner { 1.0 } else { 1.0 };
+
         if winner > 0 { 
-            self.wins[winner - 1] += if let Some(_) = self.winner { 1000.0 } else { 1.0 }
+            self.wins[winner - 1] += bonus;
         } else { 
-            self.wins.iter_mut().for_each(|win| *win += if let Some(_) = self.winner { 1000.0 } else { 1.0 } / (players as f64)) 
+            self.wins.iter_mut().for_each(|win| *win += bonus / (players as f64)) 
         }
 
-        self.visits += if let Some(_) = self.winner { 1000.0 } else { 1.0 };
+        self.visits += bonus;
 
         winner
     }
@@ -193,7 +195,11 @@ impl<Game_, Choice> Node<Game_, Choice> where Game_: Game<Choice> + Clone, Choic
 
 impl<Game_, Choice> std::fmt::Display for Node<Game_, Choice> where Game_: Game<Choice> + Clone, Choice: Clone + std::fmt::Debug {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.next.len() == 0 { return write!(f, "{{}}") };
+        if self.next.len() == 0 && self.visits == 0.0 {
+            return write!(f, "{{}}");
+        } else if let Some(winner) = self.winner { 
+            return write!(f, "{{\"choice\": \"{:?}\",  \"winner\": {}, \"visits\": {}}}", self.choice, winner, self.visits);
+        };
 
         let mut str = format!("[{}", self.next[0]);
 
