@@ -182,7 +182,7 @@ impl<Game_, Choice> Node<Game_, Choice> where Game_: Game<Choice> + Clone, Choic
         winner
     }
 
-    fn choose(&mut self, choice: &Choice) where Choice: PartialEq {
+    pub fn choose(&mut self, choice: &Choice) where Choice: PartialEq {
         let chosen_node_index = self.next
             .iter()
             .position(|node| {
