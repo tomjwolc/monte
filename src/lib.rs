@@ -132,7 +132,7 @@ impl<Game_, Choice> MCTS<Game_, Choice> where Choice: Clone, Game_: Game<Choice>
 
 pub struct Node<Game_, Choice> where Game_: Game<Choice> + Clone, Choice: Clone {
     winner: Option<usize>,
-    game_state: Game_,
+    pub game_state: Game_,
     choice: Option<Choice>,
     wins: Vec<f64>,
     visits: f64,
