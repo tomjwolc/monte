@@ -128,6 +128,7 @@ fn play_ttt_with_tree(ttt: &TTT, mcts: &MCTS<TTT, usize>) {
     println!("{} \n{}", tree, clone);
 
     while let Some(choice) = mcts.advise_with_tree(&mut tree, 1000) {
+        tree.choose(&choice);
         clone.choose(&choice);
         println!("{} \n{}", tree, clone);
     }

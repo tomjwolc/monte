@@ -113,20 +113,13 @@ impl<Game_, Choice> MCTS<Game_, Choice> where Choice: Clone, Game_: Game<Choice>
             self.mcts(tree);
         }
 
-        let choice = match tree.best_next_index(
+        match tree.best_next_index(
             tree.game_state.get_turn(), 
             Box::new(|wins, visits, _| wins / visits)
         ) {
             None => None,
-            Some(index) => {
-                let choice = tree.next[index].choice.clone().expect("can't unwrap choice at best_next_index");
-                tree.choose(&choice);
-
-                Some(choice)
-            }
-        };
-
-        choice
+            Some(index) => tree.next[index].choice.clone()
+        }
     }
 }
 
