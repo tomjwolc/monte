@@ -71,9 +71,11 @@ impl<Game_, Choice> MCTS<Game_, Choice> where Choice: Clone, Game_: Game<Choice>
     
     // returns the winner
     fn mcts(&self, node: &mut Node<Game_, Choice>) -> usize {
-        if node.visits == 0.0 {
+        if node.visits < 1.0 {
             let winner = node.game_state.clone().random_play();
 
+            return node.update(winner, self.players);
+        } else if node.visits < 2.0 {
             node.next = node.game_state.get_choices().iter().map(|choice| {
                 let mut next_game_state = node.game_state.clone();
                 next_game_state.choose(choice);
@@ -82,10 +84,8 @@ impl<Game_, Choice> MCTS<Game_, Choice> where Choice: Clone, Game_: Game<Choice>
             }).collect();
 
             if node.next.len() == 0 {
-                node.winner = Some(winner);
+                node.winner = Some(node.game_state.get_winner());
             }
-
-            return node.update(winner, self.players);
         }
 
         if let Some(winner) = node.winner {
