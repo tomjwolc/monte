@@ -190,8 +190,10 @@ impl<Game_, Choice> std::fmt::Display for Node<Game_, Choice> where Game_: Game<
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(winner) = self.winner { 
             return write!(f, "{{\"choice\": \"{:?}\",  \"winner\": {}, \"visits\": {}}}", self.choice, winner, self.visits);
-        } else if self.next.len() == 0 {
+        } else if self.next.len() == 0 && self.visits == 0.0 {
             return write!(f, "{{}}");
+        } else if self.next.len() == 0 {
+            return write!(f, "{{\"choice\": \"{:?}\",  \"wins\": {:?}, \"visits\": {}}}", self.choice, self.wins, self.visits);
         }
 
         let mut str = format!("[{}", self.next[0]);
